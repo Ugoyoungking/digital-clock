@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Digital Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #0d0d0d;
+            font-family: 'Orbitron', sans-serif;
+            color: #00ffcc; /* Neon green/blue */
+            overflow: hidden;
+        }
+
+        .clock-container {
+            display: flex;
+            align-items: baseline;
+            background: #1a1a1a;
+            padding: 25px 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.7), /* Main glow */
+                        0 0 80px rgba(0, 255, 204, 0.5),
+                        0 0 120px rgba(0, 255, 204, 0.3);
+            border: 2px solid #00ffcc;
+        }
+
+        .time-segment, .separator, .ampm-segment {
+            font-size: 6rem;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 255, 204, 0.9),
+                         0 0 30px rgba(0, 255, 204, 0.7);
+            transition: text-shadow 0.2s ease-in-out;
+        }
+
+        .separator {
+            margin: 0 20px;
+            animation: blink 1s infinite alternate;
+        }
+
+        .ampm-segment {
+            font-size: 2.8rem;
+            margin-left: 25px;
+            align-self: flex-end;
+            padding-bottom: 12px; /* Adjust alignment with larger font */
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .clock-container {
+                padding: 15px 25px;
+            }
+            .time-segment, .separator, .ampm-segment {
+                font-size: 4rem;
+            }
+            .separator {
+                margin: 0 10px;
+            }
+            .ampm-segment {
+                font-size: 2rem;
+                margin-left: 15px;
+                padding-bottom: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .clock-container {
+                flex-direction: column;
+                padding: 20px 20px;
+                border-radius: 15px;
+                text-align: center;
+            }
+            .time-segment, .separator, .ampm-segment {
+                font-size: 3.5rem;
+                margin: 0;
+            }
+            .separator {
+                display: none; /* Hide separators on very small screens or stack elements */
+            }
+            .ampm-segment {
+                margin-top: 10px;
+                margin-left: 0;
+                font-size: 1.8rem;
+                padding-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="clock-container">
+        <div id="hours" class="time-segment">00</div>
+        <div class="separator">:</div>
+        <div id="minutes" class="time-segment">00</div>
+        <div class="separator">:</div>
+        <div id="seconds" class="time-segment">00</div>
+        <div id="ampm" class="ampm-segment">AM</div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+
+            // Convert to 12-hour format
+            hours = hours % 12;
+            hours = hours ? hours : 12; // The hour '0' should be '12'
+
+            // Add leading zeros
+            hours = String(hours).padStart(2, '0');
+            minutes = String(minutes).padStart(2, '0');
+            seconds = String(seconds).padStart(2, '0');
+
+            document.getElementById('hours').textContent = hours;
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('seconds').textContent = seconds;
+            document.getElementById('ampm').textContent = ampm;
+        }
+
+        // Initial call to display time immediately
+        updateClock();
+
+        // Update the clock every second
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>
