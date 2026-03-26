@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory Game with Themes & Timer</title>
+<style>
+  body {
+	font-family: Arial, sans-serif;
+	background-color: #2c3e50;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: start;
+	min-height: 100vh;
+	margin: 0;
+	padding: 20px;
+	color: #fff;
+  }
+
+  h1 {
+	margin-bottom: 10px;
+	text-shadow: 2px 4px silver;
+  }
+
+  #controls {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 20px;
+  }
+
+  select, button {
+	padding: 8px 12px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+  }
+
+  select {
+	background-color: #2980b9;
+	color: white;
+  }
+
+  button {
+	background-color: #e74c3c;
+	color: white;
+  }
+
+  button:hover, select:hover {
+	opacity: 0.9;
+  }
+
+  #game-board {
+	display: grid;
+	grid-template-columns: repeat(4, 100px);
+	grid-gap: 15px;
+  }
+
+  .card {
+	width: 100px;
+	height: 100px;
+	background-color: #34495e;
+	border-radius: 8px;
+	cursor: pointer;
+	perspective: 1000px;
+	position: relative;
+  }
+
+  .card-inner {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	transition: transform 0.6s;
+	transform-style: preserve-3d;
+  }
+
+  .card.flipped .card-inner {
+	transform: rotateY(180deg);
+  }
+
+  .card-front, .card-back {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	backface-visibility: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2em;
+	border-radius: 8px;
+  }
+
+  .card-front {
+	background-color: #34495e;
+	color: #fff;
+  }
+
+  .card-back {
+	background-color: #ecf0f1;
+	color: #2c3e50;
+	transform: rotateY(180deg);
+  }
+
+  #status {
+	margin-top: 20px;
+	font-size: 1.2em;
+  }
+
+  #stats {
+	margin-top: 10px;
+	font-size: 1em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Memory Game </h1>
+
+<div id="controls">
+  <select id="theme-selector">
+	<option value="emoji">Emoji Theme</option>
+	<option value="images">Image Theme</option>
+  </select>
+  <button onclick="restartGame()">Restart</button>
+</div>
+
+<div id="stats">
+  Moves: <span id="moveCount">0</span> | Time: <span id="timer">0:00</span>
+</div>
+
+<div id="game-board"></div>
+<div id="status"></div>
+
+<script>
+  const emojiTheme = ['🍎', '🍌', '🍇', '🍓', '🍍', '🥝', '🍉', '🥥'];
+  const imageTheme = [
+	'https://via.placeholder.com/100/FF5733/FFFFFF?text=1',
+	'https://via.placeholder.com/100/33FF57/FFFFFF?text=2',
+	'https://via.placeholder.com/100/3357FF/FFFFFF?text=3',
+	'https://via.placeholder.com/100/FF33A1/FFFFFF?text=4',
+	'https://via.placeholder.com/100/A133FF/FFFFFF?text=5',
+	'https://via.placeholder.com/100/33FFF5/FFFFFF?text=6',
+	'https://via.placeholder.com/100/F5FF33/FFFFFF?text=7',
+	'https://via.placeholder.com/100/FF8C33/FFFFFF?text=8'
+  ];
+
+  let currentTheme = 'emoji'; // default theme
+  let cardsArray = [];
+  let firstCard = null;
+  let secondCard = null;
+  let lockBoard = false;
+  let matchesFound = 0;
+  let moveCount = 0;
+  let timerInterval = null;
+  let secondsElapsed = 0;
+
+  const board = document.getElementById('game-board');
+  const moveSpan = document.getElementById('moveCount');
+  const timerSpan = document.getElementById('timer');
+  const statusDiv = document.getElementById('status');
+  const themeSelector = document.getElementById('theme-selector');
+
+  themeSelector.addEventListener('change', () => {
+	currentTheme = themeSelector.value;
+	restartGame();
+  });
+
+  function startTimer() {
+	secondsElapsed = 0;
+	timerSpan.textContent = '0:00';
+	clearInterval(timerInterval);
+	timerInterval = setInterval(() => {
+	  secondsElapsed++;
+	  const minutes = Math.floor(secondsElapsed / 60);
+	  const seconds = secondsElapsed % 60;
+	  timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	}, 1000);
+  }
+
+  function stopTimer() {
+	clearInterval(timerInterval);
+  }
+
+  function updateMoves() {
+	moveCount++;
+	moveSpan.textContent = moveCount;
+  }
+
+  function createBoard() {
+	// Reset game state
+	lockBoard = false;
+	firstCard = null;
+	secondCard = null;
+	matchesFound = 0;
+	moveCount = 0;
+	moveSpan.textContent = '0';
+	statusDiv.textContent = '';
+	clearInterval(timerInterval);
+	secondsElapsed = 0;
+	timerSpan.textContent = '0:00';
+	startTimer();
+
+	// Prepare cards based on theme
+	if (currentTheme === 'emoji') {
+	  cardsArray = [...emojiTheme, ...emojiTheme];
+	} else {
+	  cardsArray = [...imageTheme, ...imageTheme];
+	}
+
+	// Shuffle
+	for (let i = cardsArray.length - 1; i > 0; i--) {
+	  const j = Math.floor(Math.random() * (i + 1));
+	  [cardsArray[i], cardsArray[j]] = [cardsArray[j], cardsArray[i]];
+	}
+
+	// Clear board
+	board.innerHTML = '';
+
+	// Create cards
+	for (let i = 0; i < cardsArray.length; i++) {
+	  const card = document.createElement('div');
+	  card.className = 'card';
+	  
+	  // Inner structure for flip animation
+	  const inner = document.createElement('div');
+	  inner.className = 'card-inner';
+
+	  const front = document.createElement('div');
+	  front.className = 'card-front';
+
+	  const back = document.createElement('div');
+	  back.className = 'card-back';
+
+	  // Set content based on theme
+	  if (currentTheme === 'emoji') {
+		front.textContent = '';
+		back.textContent = cardsArray[i];
+	  } else {
+		// Image theme: show image on back, front is blank
+		front.textContent = '';
+		const img = document.createElement('img');
+		img.src = cardsArray[i];
+		img.style.width = '80px';
+		img.style.height = '80px';
+		back.appendChild(img);
+	  }
+
+	  inner.appendChild(front);
+	  inner.appendChild(back);
+	  card.appendChild(inner);
+
+	  // Store value for comparison
+	  card.dataset.value = cardsArray[i];
+	  
+	  // Add event listener
+	  card.addEventListener('click', flipCard);
+
+	  // Append to board
+	  board.appendChild(card);
+	}
+  }
+
+  function flipCard() {
+	if (lockBoard) return;
+
+	if (this.classList.contains('flipped')) return;
+
+	// Flip the card
+	this.classList.add('flipped');
+
+	if (!firstCard) {
+	  firstCard = this;
+	  return;
+	}
+
+	secondCard = this;
+
+	// Increment move count
+	updateMoves();
+
+	// Check for match
+	if (firstCard.dataset.value === secondCard.dataset.value) {
+	  // Match found
+	  firstCard.removeEventListener('click', flipCard);
+	  secondCard.removeEventListener('click', flipCard);
+	  firstCard = null;
+	  secondCard = null;
+	  matchesFound++;
+	  if (matchesFound === cardsArray.length / 2) {
+		statusDiv.textContent = "🎉 You won!";
+		stopTimer();
+		alert("🎉 you won! 🏆 ")
+	  }
+	} else {
+	  // Not a match - flip back after delay
+	  lockBoard = true;
+	  setTimeout(() => {
+		firstCard.classList.remove('flipped');
+		secondCard.classList.remove('flipped');
+		firstCard = null;
+		secondCard = null;
+		lockBoard = false;
+	  }, 1000);
+	}
+  }
+
+  function restartGame() {
+	createBoard();
+  }
+
+  // Initialize game
+  createBoard();
+</script>
+</body>
+</html>
