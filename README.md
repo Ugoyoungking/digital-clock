@@ -16,6 +16,16 @@ A simple, responsive, and customizable digital clock built with HTML. This repos
 - [License](#license)
 - [Contact](#contact)
 
+
+## Merge-safe pages
+To reduce merge conflicts while keeping advanced work available, this repo now keeps both stable legacy pages and advanced variants:
+- `index.html` — stable digital clock page (merge-friendly baseline)
+- `memory-game.html` — stable classic memory game (merge-friendly baseline)
+- `index-modern.html` — advanced Nexus Word Clock build
+- `arcade-plus.html` — advanced NeuroPlay IQ Arcade+ build
+
+If you hit merge conflicts, keep `index.html`/`memory-game.html` from target branch and merge advanced updates through the new `*-modern`/`arcade-plus` files first.
+
 ## Demo
 If you enable GitHub Pages for this repository, you can serve the clock as a static site at:
 https://ugoyoungking.github.io/digital-clock/

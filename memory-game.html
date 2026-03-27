@@ -3,792 +3,313 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>NeuroPlay IQ Arcade+</title>
+<title>Memory Game with Themes & Timer</title>
 <style>
-  :root {
-    --bg: #070b1c;
-    --panel: rgba(15, 22, 45, 0.72);
-    --line: rgba(148, 171, 255, 0.28);
-    --text: #e7eeff;
-    --muted: #a7b3db;
-    --accent: #6f8dff;
-    --accent2: #21d6bf;
-    --good: #55e2a3;
-    --bad: #ff7796;
-    --shadow: 0 20px 56px rgba(0,0,0,0.5);
-  }
-  * { box-sizing: border-box; }
   body {
-    margin: 0;
-    min-height: 100vh;
-    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    color: var(--text);
-    background: radial-gradient(circle at 12% 0%, #27356f, transparent 43%), radial-gradient(circle at 98% 0%, #11434b, transparent 42%), var(--bg);
-    padding: 20px;
+	font-family: Arial, sans-serif;
+	background-color: #2c3e50;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: start;
+	min-height: 100vh;
+	margin: 0;
+	padding: 20px;
+	color: #fff;
   }
-  .app {
-    width: min(1160px, 100%);
-    margin: 0 auto;
-    border: 1px solid var(--line);
-    border-radius: 24px;
-    background: var(--panel);
-    backdrop-filter: blur(12px);
-    overflow: hidden;
-    box-shadow: var(--shadow);
+
+  h1 {
+	margin-bottom: 10px;
+	text-shadow: 2px 4px silver;
   }
-  .header {
-    padding: 18px 20px;
-    border-bottom: 1px solid var(--line);
-    display: grid;
-    gap: 12px;
+
+  #controls {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 20px;
   }
-  h1 { margin: 0; font-size: 1.25rem; }
-  .subtitle { margin: 4px 0 0; color: var(--muted); font-size: .92rem; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
-  button, input, select {
-    font: inherit;
-    color: var(--text);
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 8px 10px;
+
+  select, button {
+	padding: 8px 12px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
   }
-  button { cursor: pointer; }
-  button.primary, button.active {
-    background: linear-gradient(145deg, var(--accent), #5d79eb);
-    border-color: transparent;
-    color: #fff;
+
+  select {
+	background-color: #2980b9;
+	color: white;
   }
-  .layout {
-    display: grid;
-    grid-template-columns: 1.35fr .65fr;
-    gap: 16px;
-    padding: 16px;
+
+  button {
+	background-color: #e74c3c;
+	color: white;
   }
+
+  button:hover, select:hover {
+	opacity: 0.9;
+  }
+
+  #game-board {
+	display: grid;
+	grid-template-columns: repeat(4, 100px);
+	grid-gap: 15px;
+  }
+
   .card {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 14px;
-    background: rgba(255,255,255,0.03);
+	width: 100px;
+	height: 100px;
+	background-color: #34495e;
+	border-radius: 8px;
+	cursor: pointer;
+	perspective: 1000px;
+	position: relative;
   }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
-  .stats { color: var(--muted); font-size: .9rem; margin-bottom: 8px; }
-  .message { min-height: 1.3em; color: var(--accent2); font-size: .9rem; }
 
-  #matchBoard { display: grid; gap: 10px; }
-  .tile {
-    aspect-ratio: 1;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    display: grid;
-    place-items: center;
-    font-size: clamp(1.1rem, 2.3vw, 1.8rem);
-    background: linear-gradient(145deg, #18244a, #0f1734);
+  .card-inner {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	transition: transform 0.6s;
+	transform-style: preserve-3d;
   }
-  .tile.revealed, .tile.matched { background: #eff4ff; color: #0f1a38; }
-  .tile.matched { box-shadow: inset 0 0 0 2px rgba(85, 226, 163, .55); }
 
-  #sequenceGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
-  .seq-cell { aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--line); background: #142145; }
-  .seq-cell.flash { background: var(--accent2); transform: scale(1.02); }
-
-  .question { font-size: clamp(1.4rem, 2.5vw, 2rem); margin: 12px 0; letter-spacing: .03em; }
-
-  #blastBoard {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 4px;
-    background: rgba(255,255,255,0.02);
-    padding: 8px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
+  .card.flipped .card-inner {
+	transform: rotateY(180deg);
   }
-  .blast-cell {
-    aspect-ratio: 1;
-    border-radius: 6px;
-    border: 1px solid rgba(148, 171, 255, 0.2);
-    background: #0f1734;
-    cursor: pointer;
-  }
-  .blast-cell.filled { background: linear-gradient(145deg, #6f8dff, #4b66cf); }
-  .blast-cell.preview { outline: 2px solid var(--accent2); }
 
-  .piece-bank { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-  .piece {
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 8px;
-    background: rgba(255,255,255,0.03);
-    cursor: pointer;
-    min-width: 78px;
+  .card-front, .card-back {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	backface-visibility: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2em;
+	border-radius: 8px;
   }
-  .piece.selected { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(33,214,191,.3); }
-  .piece-grid { display: grid; gap: 2px; }
-  .piece-cell { width: 12px; height: 12px; border-radius: 2px; background: transparent; }
-  .piece-cell.on { background: var(--accent); }
 
-  .focus-panel {
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    min-height: 220px;
-    background: rgba(255,255,255,0.02);
+  .card-front {
+	background-color: #34495e;
+	color: #fff;
   }
-  #focusDot {
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    background: var(--bad);
-    opacity: 0;
-    transform: scale(.4);
-    transition: opacity .1s ease, transform .1s ease;
+
+  .card-back {
+	background-color: #ecf0f1;
+	color: #2c3e50;
+	transform: rotateY(180deg);
   }
-  #focusDot.show { opacity: 1; transform: scale(1); background: var(--accent2); cursor: pointer; }
 
-  .leaderboard { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
-  .leaderboard li { display: flex; justify-content: space-between; padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.04); font-size: .88rem; }
+  #status {
+	margin-top: 20px;
+	font-size: 1.2em;
+  }
 
-  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+  #stats {
+	margin-top: 10px;
+	font-size: 1em;
+  }
 </style>
 </head>
 <body>
-<main class="app">
-  <header class="header">
-    <div>
-      <h1>🧠 NeuroPlay IQ Arcade+</h1>
-      <p class="subtitle">Modern brain gym with memory, logic, speed, and block strategy games.</p>
-    </div>
-    <div class="tabs">
-      <button id="tabMatch" class="active">Memory Matrix</button>
-      <button id="tabSequence">Sequence Recall</button>
-      <button id="tabMath">Quick Math</button>
-      <button id="tabBlast">Block Blast IQ</button>
-      <button id="tabFocus">Focus Tap</button>
-    </div>
-  </header>
 
-  <section class="layout">
-    <article class="card">
-      <div id="matchGame">
-        <div class="controls">
-          <select id="matchDifficulty">
-            <option value="easy">Easy 4x4</option>
-            <option value="medium">Medium 5x4</option>
-            <option value="hard">Hard 6x4</option>
-          </select>
-          <button id="newMatch" class="primary">New Round</button>
-        </div>
-        <div class="stats">Moves: <span id="moves">0</span> • Time: <span id="matchTime">0:00</span> • Combo: <span id="combo">x0</span> • Score: <span id="matchScore">0</span></div>
-        <div id="matchBoard"></div>
-        <p class="message" id="matchMessage"></p>
-      </div>
+<h1>Memory Game </h1>
 
-      <div id="sequenceGame" hidden>
-        <div class="controls">
-          <button id="startSequence" class="primary">Start Sequence</button>
-          <span class="stats">Round: <span id="sequenceRound">0</span> • Best: <span id="sequenceBest">0</span></span>
-        </div>
-        <p class="stats">Observe the flash pattern and repeat it exactly.</p>
-        <div id="sequenceGrid"></div>
-        <p class="message" id="sequenceMessage"></p>
-      </div>
+<div id="controls">
+  <select id="theme-selector">
+	<option value="emoji">Emoji Theme</option>
+	<option value="images">Image Theme</option>
+  </select>
+  <button onclick="restartGame()">Restart</button>
+</div>
 
-      <div id="mathGame" hidden>
-        <div class="controls">
-          <button id="startMath" class="primary">Start 60s Challenge</button>
-          <span class="stats">Time: <span id="mathTime">60</span>s • Score: <span id="mathScore">0</span></span>
-        </div>
-        <div class="question" id="mathQuestion">Press start to generate question</div>
-        <div class="controls">
-          <input type="number" id="mathAnswer" placeholder="Your answer" />
-          <button id="submitMath">Submit</button>
-        </div>
-        <p class="message" id="mathMessage"></p>
-      </div>
+<div id="stats">
+  Moves: <span id="moveCount">0</span> | Time: <span id="timer">0:00</span>
+</div>
 
-      <div id="blastGame" hidden>
-        <div class="controls">
-          <button id="newBlast" class="primary">New Blast Run</button>
-          <span class="stats">Score: <span id="blastScore">0</span> • Lines cleared: <span id="blastLines">0</span></span>
-        </div>
-        <p class="stats">Pick a piece, then click a board cell to place it. Clear full rows/columns to score big.</p>
-        <div id="blastBoard"></div>
-        <div id="pieceBank" class="piece-bank"></div>
-        <p class="message" id="blastMessage"></p>
-      </div>
-
-      <div id="focusGame" hidden>
-        <div class="controls">
-          <button id="startFocus" class="primary">Start Focus Test</button>
-          <span class="stats">Hits: <span id="focusHits">0</span> • Avg reaction: <span id="focusAvg">0</span>ms</span>
-        </div>
-        <p class="stats">Tap the dot as soon as it appears. 10 rounds.</p>
-        <div class="focus-panel"><div id="focusDot"></div></div>
-        <p class="message" id="focusMessage"></p>
-      </div>
-    </article>
-
-    <aside class="card">
-      <h3 style="margin-top:0">Progress Leaderboard</h3>
-      <p class="stats">Saved in your browser local storage.</p>
-      <ul id="leaderboard" class="leaderboard"></ul>
-      <button id="resetScores">Reset scores</button>
-    </aside>
-  </section>
-</main>
+<div id="game-board"></div>
+<div id="status"></div>
 
 <script>
-  const scoreKeys = {
-    memory: "neuro_memory_best",
-    sequence: "neuro_sequence_best",
-    math: "neuro_math_best",
-    blast: "neuro_blast_best",
-    focus: "neuro_focus_best"
-  };
-  const tabs = {
-    tabMatch: document.getElementById("matchGame"),
-    tabSequence: document.getElementById("sequenceGame"),
-    tabMath: document.getElementById("mathGame"),
-    tabBlast: document.getElementById("blastGame"),
-    tabFocus: document.getElementById("focusGame")
-  };
-  const leaderboardEl = document.getElementById("leaderboard");
-
-  const getBest = (key) => Number(localStorage.getItem(key) || 0);
-  const setBest = (key, value) => localStorage.setItem(key, String(Math.max(getBest(key), value)));
-
-  function renderLeaderboard() {
-    leaderboardEl.innerHTML = "";
-    [
-      ["Memory Matrix", getBest(scoreKeys.memory)],
-      ["Sequence Recall", getBest(scoreKeys.sequence)],
-      ["Quick Math", getBest(scoreKeys.math)],
-      ["Block Blast IQ", getBest(scoreKeys.blast)],
-      ["Focus Tap", getBest(scoreKeys.focus)]
-    ].forEach(([label, score]) => {
-      const li = document.createElement("li");
-      li.innerHTML = `<span>${label}</span><strong>${score}</strong>`;
-      leaderboardEl.appendChild(li);
-    });
-  }
-
-  document.getElementById("resetScores").addEventListener("click", () => {
-    Object.values(scoreKeys).forEach((key) => localStorage.removeItem(key));
-    renderLeaderboard();
-  });
-
-  Object.keys(tabs).forEach((tabId) => {
-    document.getElementById(tabId).addEventListener("click", () => {
-      Object.keys(tabs).forEach((id) => {
-        const active = id === tabId;
-        tabs[id].hidden = !active;
-        document.getElementById(id).classList.toggle("active", active);
-      });
-    });
-  });
-
-  // ---------- Memory Matrix ----------
-  const matchIcons = ["🛰️","🧩","🎯","🦉","⚡","🎲","🧠","🎵","📚","🌌","🔬","🛸"];
-  const matchBoard = document.getElementById("matchBoard");
-  const difficultyEl = document.getElementById("matchDifficulty");
-  const matchMsg = document.getElementById("matchMessage");
-  let matchState = {};
-
-  function setupMatchBoard() {
-    const level = difficultyEl.value;
-    const conf = level === "easy" ? { cols: 4, rows: 4 } : level === "medium" ? { cols: 5, rows: 4 } : { cols: 6, rows: 4 };
-    const pairCount = conf.cols * conf.rows / 2;
-    const cards = [...matchIcons.slice(0, pairCount), ...matchIcons.slice(0, pairCount)].sort(() => Math.random() - 0.5);
-
-    matchBoard.style.gridTemplateColumns = `repeat(${conf.cols}, minmax(0, 1fr))`;
-    matchBoard.innerHTML = "";
-    cards.forEach((icon) => {
-      const tile = document.createElement("button");
-      tile.className = "tile";
-      tile.dataset.icon = icon;
-      tile.textContent = "?";
-      tile.addEventListener("click", onFlipTile);
-      matchBoard.appendChild(tile);
-    });
-
-    matchState = {
-      first: null,
-      second: null,
-      lock: false,
-      matches: 0,
-      totalPairs: pairCount,
-      moves: 0,
-      combo: 0,
-      score: 0,
-      startedAt: Date.now(),
-      timerId: null
-    };
-
-    document.getElementById("moves").textContent = "0";
-    document.getElementById("combo").textContent = "x0";
-    document.getElementById("matchScore").textContent = "0";
-    matchMsg.textContent = "Clear all pairs quickly for bonus points.";
-
-    clearInterval(matchState.timerId);
-    matchState.timerId = setInterval(() => {
-      const sec = Math.floor((Date.now() - matchState.startedAt) / 1000);
-      document.getElementById("matchTime").textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-    }, 1000);
-  }
-
-  function reveal(tile) { tile.classList.add("revealed"); tile.textContent = tile.dataset.icon; }
-  function hide(tile) { tile.classList.remove("revealed"); tile.textContent = "?"; }
-
-  function onFlipTile(e) {
-    const tile = e.currentTarget;
-    if (matchState.lock || tile.classList.contains("matched") || tile === matchState.first) return;
-    reveal(tile);
-
-    if (!matchState.first) { matchState.first = tile; return; }
-    matchState.second = tile;
-    matchState.moves += 1;
-    document.getElementById("moves").textContent = String(matchState.moves);
-
-    if (matchState.first.dataset.icon === matchState.second.dataset.icon) {
-      [matchState.first, matchState.second].forEach((t) => {
-        t.classList.add("matched");
-        t.classList.remove("revealed");
-      });
-      matchState.matches += 1;
-      matchState.combo += 1;
-      matchState.score += 110 + matchState.combo * 12;
-      document.getElementById("combo").textContent = `x${matchState.combo}`;
-      document.getElementById("matchScore").textContent = String(matchState.score);
-      matchState.first = null;
-      matchState.second = null;
-
-      if (matchState.matches === matchState.totalPairs) {
-        clearInterval(matchState.timerId);
-        const sec = Math.floor((Date.now() - matchState.startedAt) / 1000);
-        const bonus = Math.max(0, 260 - sec * 2);
-        matchState.score += bonus;
-        document.getElementById("matchScore").textContent = String(matchState.score);
-        setBest(scoreKeys.memory, matchState.score);
-        renderLeaderboard();
-        matchMsg.textContent = `🏆 Perfect clear! Bonus ${bonus} | Final ${matchState.score}`;
-      }
-      return;
-    }
-
-    matchState.combo = 0;
-    document.getElementById("combo").textContent = "x0";
-    matchState.lock = true;
-    setTimeout(() => {
-      hide(matchState.first);
-      hide(matchState.second);
-      matchState.first = null;
-      matchState.second = null;
-      matchState.lock = false;
-    }, 650);
-  }
-
-  document.getElementById("newMatch").addEventListener("click", setupMatchBoard);
-  difficultyEl.addEventListener("change", setupMatchBoard);
-
-  // ---------- Sequence Recall ----------
-  const seqGrid = document.getElementById("sequenceGrid");
-  const seqMsg = document.getElementById("sequenceMessage");
-  const seqRoundEl = document.getElementById("sequenceRound");
-  const seqBestEl = document.getElementById("sequenceBest");
-  let seqState = { pattern: [], userIndex: 0, accepting: false, round: 0 };
-
-  for (let i = 0; i < 9; i += 1) {
-    const cell = document.createElement("button");
-    cell.className = "seq-cell";
-    cell.dataset.i = String(i);
-    cell.addEventListener("click", onSequenceInput);
-    seqGrid.appendChild(cell);
-  }
-
-  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
-
-  async function flashCell(i) {
-    const cell = seqGrid.children[i];
-    cell.classList.add("flash");
-    await sleep(320);
-    cell.classList.remove("flash");
-    await sleep(110);
-  }
-
-  async function playPattern() {
-    seqState.accepting = false;
-    seqMsg.textContent = "Observe the pattern...";
-    for (const i of seqState.pattern) await flashCell(i);
-    seqState.accepting = true;
-    seqState.userIndex = 0;
-    seqMsg.textContent = "Repeat now";
-  }
-
-  async function nextRound() {
-    seqState.round += 1;
-    seqRoundEl.textContent = String(seqState.round);
-    seqState.pattern.push(Math.floor(Math.random() * 9));
-    await sleep(450);
-    await playPattern();
-  }
-
-  function onSequenceInput(e) {
-    if (!seqState.accepting) return;
-    const pick = Number(e.currentTarget.dataset.i);
-    const expected = seqState.pattern[seqState.userIndex];
-
-    e.currentTarget.classList.add("flash");
-    setTimeout(() => e.currentTarget.classList.remove("flash"), 120);
-
-    if (pick !== expected) {
-      seqState.accepting = false;
-      seqMsg.textContent = `❌ Wrong input at round ${seqState.round}`;
-      setBest(scoreKeys.sequence, seqState.round);
-      seqBestEl.textContent = String(getBest(scoreKeys.sequence));
-      renderLeaderboard();
-      return;
-    }
-
-    seqState.userIndex += 1;
-    if (seqState.userIndex === seqState.pattern.length) {
-      seqMsg.textContent = "✅ Nice. Next round...";
-      setTimeout(nextRound, 650);
-    }
-  }
-
-  document.getElementById("startSequence").addEventListener("click", () => {
-    seqState = { pattern: [], userIndex: 0, accepting: false, round: 0 };
-    seqRoundEl.textContent = "0";
-    seqBestEl.textContent = String(getBest(scoreKeys.sequence));
-    seqMsg.textContent = "Get ready...";
-    nextRound();
-  });
-
-  // ---------- Quick Math ----------
-  const mathQ = document.getElementById("mathQuestion");
-  const mathA = document.getElementById("mathAnswer");
-  const mathMsg = document.getElementById("mathMessage");
-  let mathState = { running: false, time: 60, score: 0, answer: null, interval: null };
-
-  function genQuestion() {
-    const a = 5 + Math.floor(Math.random() * 35);
-    const b = 2 + Math.floor(Math.random() * 21);
-    const op = ["+", "-", "×"][Math.floor(Math.random() * 3)];
-    let ans = 0;
-    if (op === "+") ans = a + b;
-    if (op === "-") ans = a - b;
-    if (op === "×") ans = a * b;
-    mathState.answer = ans;
-    mathQ.textContent = `${a} ${op} ${b} = ?`;
-    mathA.value = "";
-    mathA.focus();
-  }
-
-  function endMath() {
-    clearInterval(mathState.interval);
-    mathState.running = false;
-    mathMsg.textContent = `⌛ Time up! Final score ${mathState.score}.`;
-    setBest(scoreKeys.math, mathState.score);
-    renderLeaderboard();
-  }
-
-  document.getElementById("startMath").addEventListener("click", () => {
-    clearInterval(mathState.interval);
-    mathState = { running: true, time: 60, score: 0, answer: null, interval: null };
-    document.getElementById("mathTime").textContent = "60";
-    document.getElementById("mathScore").textContent = "0";
-    mathMsg.textContent = "Go!";
-    genQuestion();
-
-    mathState.interval = setInterval(() => {
-      mathState.time -= 1;
-      document.getElementById("mathTime").textContent = String(mathState.time);
-      if (mathState.time <= 0) endMath();
-    }, 1000);
-  });
-
-  function submitMath() {
-    if (!mathState.running) return;
-    const val = Number(mathA.value);
-    if (val === mathState.answer) {
-      mathState.score += 10;
-      mathMsg.textContent = "✅ Correct";
-    } else {
-      mathState.score = Math.max(0, mathState.score - 3);
-      mathMsg.textContent = `❌ Wrong (ans: ${mathState.answer})`;
-    }
-    document.getElementById("mathScore").textContent = String(mathState.score);
-    genQuestion();
-  }
-
-  document.getElementById("submitMath").addEventListener("click", submitMath);
-  mathA.addEventListener("keydown", (e) => { if (e.key === "Enter") submitMath(); });
-
-  // ---------- Block Blast IQ ----------
-  const blastBoard = document.getElementById("blastBoard");
-  const pieceBank = document.getElementById("pieceBank");
-  const blastMsg = document.getElementById("blastMessage");
-
-  const blastShapes = [
-    [[1]],
-    [[1,1]],
-    [[1,1,1]],
-    [[1,1],[1,1]],
-    [[1,0],[1,1]],
-    [[0,1],[1,1]],
-    [[1,1,1],[0,1,0]],
-    [[1,1,1],[1,0,0]],
-    [[1,1,1],[0,0,1]],
-    [[1,1,1,1]]
+  const emojiTheme = ['🍎', '🍌', '🍇', '🍓', '🍍', '🥝', '🍉', '🥥'];
+  const imageTheme = [
+	'https://via.placeholder.com/100/FF5733/FFFFFF?text=1',
+	'https://via.placeholder.com/100/33FF57/FFFFFF?text=2',
+	'https://via.placeholder.com/100/3357FF/FFFFFF?text=3',
+	'https://via.placeholder.com/100/FF33A1/FFFFFF?text=4',
+	'https://via.placeholder.com/100/A133FF/FFFFFF?text=5',
+	'https://via.placeholder.com/100/33FFF5/FFFFFF?text=6',
+	'https://via.placeholder.com/100/F5FF33/FFFFFF?text=7',
+	'https://via.placeholder.com/100/FF8C33/FFFFFF?text=8'
   ];
 
-  let blastState = {
-    board: Array.from({ length: 8 }, () => Array(8).fill(0)),
-    pieces: [],
-    selectedPieceId: null,
-    score: 0,
-    lines: 0
-  };
+  let currentTheme = 'emoji'; // default theme
+  let cardsArray = [];
+  let firstCard = null;
+  let secondCard = null;
+  let lockBoard = false;
+  let matchesFound = 0;
+  let moveCount = 0;
+  let timerInterval = null;
+  let secondsElapsed = 0;
 
-  function createBlastBoardUI() {
-    blastBoard.innerHTML = "";
-    for (let r = 0; r < 8; r += 1) {
-      for (let c = 0; c < 8; c += 1) {
-        const cell = document.createElement("button");
-        cell.className = "blast-cell";
-        cell.dataset.r = String(r);
-        cell.dataset.c = String(c);
-        cell.addEventListener("click", onBlastCellClick);
-        blastBoard.appendChild(cell);
-      }
-    }
-  }
+  const board = document.getElementById('game-board');
+  const moveSpan = document.getElementById('moveCount');
+  const timerSpan = document.getElementById('timer');
+  const statusDiv = document.getElementById('status');
+  const themeSelector = document.getElementById('theme-selector');
 
-  function paintBlastBoard() {
-    const cells = blastBoard.children;
-    let idx = 0;
-    for (let r = 0; r < 8; r += 1) {
-      for (let c = 0; c < 8; c += 1) {
-        cells[idx].classList.toggle("filled", blastState.board[r][c] === 1);
-        cells[idx].classList.remove("preview");
-        idx += 1;
-      }
-    }
-  }
-
-  function cloneShape(shape) { return shape.map((row) => [...row]); }
-
-  function randomPieces() {
-    return Array.from({ length: 3 }, (_, i) => ({ id: `p${Date.now()}_${i}`, shape: cloneShape(blastShapes[Math.floor(Math.random() * blastShapes.length)]) }));
-  }
-
-  function renderPieceBank() {
-    pieceBank.innerHTML = "";
-    blastState.pieces.forEach((piece) => {
-      const wrap = document.createElement("button");
-      wrap.className = "piece";
-      if (blastState.selectedPieceId === piece.id) wrap.classList.add("selected");
-      wrap.addEventListener("click", () => {
-        blastState.selectedPieceId = piece.id;
-        renderPieceBank();
-      });
-
-      const rows = piece.shape.length;
-      const cols = piece.shape[0].length;
-      const g = document.createElement("div");
-      g.className = "piece-grid";
-      g.style.gridTemplateColumns = `repeat(${cols}, 12px)`;
-
-      for (let r = 0; r < rows; r += 1) {
-        for (let c = 0; c < cols; c += 1) {
-          const cell = document.createElement("div");
-          cell.className = `piece-cell ${piece.shape[r][c] ? "on" : ""}`;
-          g.appendChild(cell);
-        }
-      }
-
-      wrap.appendChild(g);
-      pieceBank.appendChild(wrap);
-    });
-  }
-
-  function canPlace(shape, startR, startC) {
-    for (let r = 0; r < shape.length; r += 1) {
-      for (let c = 0; c < shape[0].length; c += 1) {
-        if (!shape[r][c]) continue;
-        const rr = startR + r;
-        const cc = startC + c;
-        if (rr < 0 || rr >= 8 || cc < 0 || cc >= 8) return false;
-        if (blastState.board[rr][cc]) return false;
-      }
-    }
-    return true;
-  }
-
-  function placeShape(shape, startR, startC) {
-    for (let r = 0; r < shape.length; r += 1) {
-      for (let c = 0; c < shape[0].length; c += 1) {
-        if (shape[r][c]) blastState.board[startR + r][startC + c] = 1;
-      }
-    }
-  }
-
-  function clearLines() {
-    const rowsToClear = [];
-    const colsToClear = [];
-
-    for (let r = 0; r < 8; r += 1) if (blastState.board[r].every((v) => v === 1)) rowsToClear.push(r);
-    for (let c = 0; c < 8; c += 1) {
-      let full = true;
-      for (let r = 0; r < 8; r += 1) if (blastState.board[r][c] === 0) full = false;
-      if (full) colsToClear.push(c);
-    }
-
-    rowsToClear.forEach((r) => blastState.board[r].fill(0));
-    colsToClear.forEach((c) => { for (let r = 0; r < 8; r += 1) blastState.board[r][c] = 0; });
-
-    const cleared = rowsToClear.length + colsToClear.length;
-    if (cleared > 0) {
-      blastState.lines += cleared;
-      blastState.score += cleared * 120;
-      blastMsg.textContent = `🔥 Cleared ${cleared} line(s)!`;
-    }
-  }
-
-  function hasAnyPlacement() {
-    for (const piece of blastState.pieces) {
-      for (let r = 0; r < 8; r += 1) {
-        for (let c = 0; c < 8; c += 1) {
-          if (canPlace(piece.shape, r, c)) return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  function updateBlastStats() {
-    document.getElementById("blastScore").textContent = String(blastState.score);
-    document.getElementById("blastLines").textContent = String(blastState.lines);
-  }
-
-  function onBlastCellClick(e) {
-    const piece = blastState.pieces.find((p) => p.id === blastState.selectedPieceId);
-    if (!piece) { blastMsg.textContent = "Select a piece first."; return; }
-
-    const r = Number(e.currentTarget.dataset.r);
-    const c = Number(e.currentTarget.dataset.c);
-
-    if (!canPlace(piece.shape, r, c)) {
-      blastMsg.textContent = "Can't place there.";
-      return;
-    }
-
-    placeShape(piece.shape, r, c);
-    blastState.score += piece.shape.flat().reduce((a, b) => a + b, 0) * 8;
-    blastState.pieces = blastState.pieces.filter((p) => p.id !== piece.id);
-    blastState.selectedPieceId = blastState.pieces[0]?.id || null;
-
-    clearLines();
-
-    if (blastState.pieces.length === 0) {
-      blastState.pieces = randomPieces();
-      blastMsg.textContent = "New pieces generated.";
-    }
-
-    paintBlastBoard();
-    renderPieceBank();
-    updateBlastStats();
-
-    if (!hasAnyPlacement()) {
-      setBest(scoreKeys.blast, blastState.score);
-      renderLeaderboard();
-      blastMsg.textContent = `💥 Game over. Score ${blastState.score}. Start a new run.`;
-      blastState.pieces = [];
-      blastState.selectedPieceId = null;
-      renderPieceBank();
-    }
-  }
-
-  function newBlastGame() {
-    blastState = {
-      board: Array.from({ length: 8 }, () => Array(8).fill(0)),
-      pieces: randomPieces(),
-      selectedPieceId: null,
-      score: 0,
-      lines: 0
-    };
-    blastState.selectedPieceId = blastState.pieces[0].id;
-    paintBlastBoard();
-    renderPieceBank();
-    updateBlastStats();
-    blastMsg.textContent = "Select piece and place strategically.";
-  }
-
-  document.getElementById("newBlast").addEventListener("click", newBlastGame);
-
-  // ---------- Focus Tap ----------
-  const focusDot = document.getElementById("focusDot");
-  const focusMsg = document.getElementById("focusMessage");
-  let focusState = {
-    running: false,
-    hits: 0,
-    totalMs: 0,
-    startMs: 0,
-    timer: null
-  };
-
-  function updateFocusStats() {
-    document.getElementById("focusHits").textContent = String(focusState.hits);
-    const avg = focusState.hits ? Math.round(focusState.totalMs / focusState.hits) : 0;
-    document.getElementById("focusAvg").textContent = String(avg);
-  }
-
-  function scheduleDot() {
-    if (!focusState.running || focusState.hits >= 10) return;
-    const wait = 650 + Math.floor(Math.random() * 1400);
-    focusState.timer = setTimeout(() => {
-      focusDot.classList.add("show");
-      focusState.startMs = performance.now();
-    }, wait);
-  }
-
-  focusDot.addEventListener("click", () => {
-    if (!focusDot.classList.contains("show") || !focusState.running) return;
-    const reaction = Math.round(performance.now() - focusState.startMs);
-    focusDot.classList.remove("show");
-    focusState.hits += 1;
-    focusState.totalMs += reaction;
-    updateFocusStats();
-    focusMsg.textContent = `Reaction ${reaction}ms`;
-
-    if (focusState.hits >= 10) {
-      focusState.running = false;
-      const avg = Math.round(focusState.totalMs / focusState.hits);
-      const score = Math.max(0, 600 - avg);
-      setBest(scoreKeys.focus, score);
-      renderLeaderboard();
-      focusMsg.textContent = `🏁 Complete. Avg ${avg}ms | Score ${score}`;
-      return;
-    }
-    scheduleDot();
+  themeSelector.addEventListener('change', () => {
+	currentTheme = themeSelector.value;
+	restartGame();
   });
 
-  document.getElementById("startFocus").addEventListener("click", () => {
-    clearTimeout(focusState.timer);
-    focusDot.classList.remove("show");
-    focusState = { running: true, hits: 0, totalMs: 0, startMs: 0, timer: null };
-    updateFocusStats();
-    focusMsg.textContent = "Wait for the dot and tap instantly.";
-    scheduleDot();
-  });
+  function startTimer() {
+	secondsElapsed = 0;
+	timerSpan.textContent = '0:00';
+	clearInterval(timerInterval);
+	timerInterval = setInterval(() => {
+	  secondsElapsed++;
+	  const minutes = Math.floor(secondsElapsed / 60);
+	  const seconds = secondsElapsed % 60;
+	  timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	}, 1000);
+  }
 
-  // Init
-  createBlastBoardUI();
-  setupMatchBoard();
-  seqBestEl.textContent = String(getBest(scoreKeys.sequence));
-  newBlastGame();
-  renderLeaderboard();
+  function stopTimer() {
+	clearInterval(timerInterval);
+  }
+
+  function updateMoves() {
+	moveCount++;
+	moveSpan.textContent = moveCount;
+  }
+
+  function createBoard() {
+	// Reset game state
+	lockBoard = false;
+	firstCard = null;
+	secondCard = null;
+	matchesFound = 0;
+	moveCount = 0;
+	moveSpan.textContent = '0';
+	statusDiv.textContent = '';
+	clearInterval(timerInterval);
+	secondsElapsed = 0;
+	timerSpan.textContent = '0:00';
+	startTimer();
+
+	// Prepare cards based on theme
+	if (currentTheme === 'emoji') {
+	  cardsArray = [...emojiTheme, ...emojiTheme];
+	} else {
+	  cardsArray = [...imageTheme, ...imageTheme];
+	}
+
+	// Shuffle
+	for (let i = cardsArray.length - 1; i > 0; i--) {
+	  const j = Math.floor(Math.random() * (i + 1));
+	  [cardsArray[i], cardsArray[j]] = [cardsArray[j], cardsArray[i]];
+	}
+
+	// Clear board
+	board.innerHTML = '';
+
+	// Create cards
+	for (let i = 0; i < cardsArray.length; i++) {
+	  const card = document.createElement('div');
+	  card.className = 'card';
+	  
+	  // Inner structure for flip animation
+	  const inner = document.createElement('div');
+	  inner.className = 'card-inner';
+
+	  const front = document.createElement('div');
+	  front.className = 'card-front';
+
+	  const back = document.createElement('div');
+	  back.className = 'card-back';
+
+	  // Set content based on theme
+	  if (currentTheme === 'emoji') {
+		front.textContent = '';
+		back.textContent = cardsArray[i];
+	  } else {
+		// Image theme: show image on back, front is blank
+		front.textContent = '';
+		const img = document.createElement('img');
+		img.src = cardsArray[i];
+		img.style.width = '80px';
+		img.style.height = '80px';
+		back.appendChild(img);
+	  }
+
+	  inner.appendChild(front);
+	  inner.appendChild(back);
+	  card.appendChild(inner);
+
+	  // Store value for comparison
+	  card.dataset.value = cardsArray[i];
+	  
+	  // Add event listener
+	  card.addEventListener('click', flipCard);
+
+	  // Append to board
+	  board.appendChild(card);
+	}
+  }
+
+  function flipCard() {
+	if (lockBoard) return;
+
+	if (this.classList.contains('flipped')) return;
+
+	// Flip the card
+	this.classList.add('flipped');
+
+	if (!firstCard) {
+	  firstCard = this;
+	  return;
+	}
+
+	secondCard = this;
+
+	// Increment move count
+	updateMoves();
+
+	// Check for match
+	if (firstCard.dataset.value === secondCard.dataset.value) {
+	  // Match found
+	  firstCard.removeEventListener('click', flipCard);
+	  secondCard.removeEventListener('click', flipCard);
+	  firstCard = null;
+	  secondCard = null;
+	  matchesFound++;
+	  if (matchesFound === cardsArray.length / 2) {
+		statusDiv.textContent = "🎉 You won!";
+		stopTimer();
+		alert("🎉 you won! 🏆 ")
+	  }
+	} else {
+	  // Not a match - flip back after delay
+	  lockBoard = true;
+	  setTimeout(() => {
+		firstCard.classList.remove('flipped');
+		secondCard.classList.remove('flipped');
+		firstCard = null;
+		secondCard = null;
+		lockBoard = false;
+	  }, 1000);
+	}
+  }
+
+  function restartGame() {
+	createBoard();
+  }
+
+  // Initialize game
+  createBoard();
 </script>
 </body>
 </html>
