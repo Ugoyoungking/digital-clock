@@ -23,6 +23,7 @@ To reduce merge conflicts while keeping advanced work available, this repo now k
 - `memory-game.html` — stable classic memory game (merge-friendly baseline)
 - `index-modern.html` — advanced Nexus Word Clock build
 - `arcade-plus.html` — advanced NeuroPlay IQ Arcade+ build
+- `memory-game-plus.html` — same advanced arcade build using a memory-game-specific filename for easier merge adoption
 
 If you hit merge conflicts, keep `index.html`/`memory-game.html` from target branch and merge advanced updates through the new `*-modern`/`arcade-plus` files first.
 
